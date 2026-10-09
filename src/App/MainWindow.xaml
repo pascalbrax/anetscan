@@ -152,7 +152,7 @@
             <Button x:Name="ScanButton" Grid.Column="1" Height="40" MinWidth="110"
                     Style="{StaticResource AccentButtonStyle}"
                     Visibility="{x:Bind NotScanningVisibility(ViewModel.IsScanning), Mode=OneWay}"
-                    Click="ScanButton_Click">
+                    Click="ScanButton_Click" ToolTipService.ToolTip="Scan (F5)">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE721;" FontSize="16" />
                     <TextBlock Text="Scan" />
@@ -160,7 +160,7 @@
             </Button>
             <Button x:Name="StopButton" Grid.Column="1" Height="40" MinWidth="110"
                     Visibility="{x:Bind ViewModel.IsScanning, Mode=OneWay}"
-                    Click="StopButton_Click">
+                    Click="StopButton_Click" ToolTipService.ToolTip="Stop (Esc)">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE71A;" FontSize="16" />
                     <TextBlock Text="Stop" />
@@ -357,10 +357,6 @@
                        Text="{x:Bind ViewModel.ElapsedText, Mode=OneWay}" />
         </Grid>
 
-        <Grid.KeyboardAccelerators>
-            <KeyboardAccelerator Key="F5" Invoked="ScanAccelerator_Invoked" />
-            <KeyboardAccelerator Key="Escape" Invoked="StopAccelerator_Invoked" />
-        </Grid.KeyboardAccelerators>
     </Grid>
 
 </Window>

@@ -33,6 +33,7 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = new MainViewModel(DispatcherQueue);
         InitializeComponent();
+        Root.KeyDown += Root_KeyDown;
 
         var version = typeof(MainWindow).Assembly.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion.Split('+')[0] ?? "";
@@ -108,17 +109,19 @@ public sealed partial class MainWindow : Window
         StartScan();
     }
 
-    private void ScanAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    /// <summary>F5 scans, Esc stops. Plain key handling: XAML accelerators would add an "F5" hint to every tooltip.</summary>
+    private void Root_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
-        args.Handled = true;
-        StartScan();
-    }
-
-    private void StopAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-    {
-        if (!ViewModel.IsScanning) return;
-        args.Handled = true;
-        ViewModel.StopScan();
+        if (e.Key == Windows.System.VirtualKey.F5)
+        {
+            e.Handled = true;
+            StartScan();
+        }
+        else if (e.Key == Windows.System.VirtualKey.Escape && ViewModel.IsScanning)
+        {
+            e.Handled = true;
+            ViewModel.StopScan();
+        }
     }
 
     private void StartScan()

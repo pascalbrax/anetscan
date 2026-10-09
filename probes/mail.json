@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "mail",
+  "title": "Mail",
+  "description": "SMTP, POP3 and IMAP greetings (plain and TLS ports)",
+  "ports": [25, 587, { "port": 465, "tls": true }, 110, { "port": 995, "tls": true }, 143, { "port": 993, "tls": true }],
+  "steps": [
+    { "read": { "timeoutMs": 2000, "maxBytes": 512, "until": { "text": "\n" } } }
+  ],
+  "match": [
+    { "regex": "^220[ -](?<greeting>[^\\r\\n]*)", "short": "SMTP", "long": "Service  : SMTP\nGreeting : {greeting}\nTLS      : {tls_version}\nCert     : {cert_cn} (expires {cert_expires})" },
+    { "regex": "^\\+OK ?(?<greeting>[^\\r\\n]*)", "short": "POP3", "long": "Service  : POP3\nGreeting : {greeting}\nTLS      : {tls_version}\nCert     : {cert_cn} (expires {cert_expires})" },
+    { "regex": "^\\* OK (?<greeting>[^\\r\\n]*)", "short": "IMAP", "long": "Service  : IMAP\nGreeting : {greeting}\nTLS      : {tls_version}\nCert     : {cert_cn} (expires {cert_expires})" }
+  ],
+  "fallback": { "short": "open" }
+}

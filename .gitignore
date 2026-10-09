@@ -1,0 +1,7 @@
+bin/
+obj/
+*.user
+.vs/
+build/
+dist/
+scratch_smb_hex.txt

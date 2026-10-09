@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>ANetworkScanner.App</RootNamespace>
+    <!-- AssemblyName must start with a letter (CsWinRT source generator bug with leading digits). -->
+    <AssemblyName>ANetworkScanner</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <UseWinUI>true</UseWinUI>
+    <Platforms>x64;arm64</Platforms>
+
+    <!-- Unpackaged, self-contained: no MSIX, no runtime install. -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Engine\Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Also shipped next to the exe: AppWindow.SetIcon loads it from disk at runtime. -->
+    <Content Include="Assets\AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\AppIcon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Built-in probes ship next to the executable. -->
+    <Content Include="..\..\probes\*.json" Link="probes\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- IEEE MAC vendor list shipped with the app; a newer downloaded copy lives in the user's data folder. -->
+    <Content Include="..\..\data\oui.*" Link="data\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!-- dotnet publish omits the XAML compiler's .xbf/.pri output; without them the app crashes at startup. -->
+  <Target Name="IncludeXamlCompilerOutputInPublish" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_GeneratedXbf Include="$(OutDir)**\*.xbf" />
+      <_GeneratedPri Include="$(OutDir)$(AssemblyName).pri" />
+      <ResolvedFileToPublish Include="@(_GeneratedXbf)">
+        <RelativePath>%(_GeneratedXbf.RecursiveDir)%(_GeneratedXbf.Filename)%(_GeneratedXbf.Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Include="@(_GeneratedPri)">
+        <RelativePath>%(_GeneratedPri.Filename)%(_GeneratedPri.Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+</Project>

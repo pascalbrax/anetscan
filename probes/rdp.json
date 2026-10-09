@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "rdp",
+  "title": "RDP",
+  "description": "Remote Desktop: X.224 connection request, reports the security protocol the server picks (port 3389)",
+  "ports": [3389],
+  "steps": [
+    // TPKT + X.224 Connection Request + RDP_NEG_REQ asking for TLS and CredSSP (NLA)
+    { "send": { "hex": "03 00 00 13  0E E0 00 00 00 00 00  01 00 08 00 03 00 00 00" } },
+    { "read": { "timeoutMs": 2000, "maxBytes": 64 } }
+  ],
+  "match": [
+    // X.224 Connection Confirm (0xD0) + RDP_NEG_RSP (type 02); the last 4 bytes are the selected protocol
+    { "hex": "03 00 00 13 0E D0 ?? ?? ?? ?? ??  02 ?? 08 00  08 00 00 00", "level": "good", "short": "NLA (CredSSP+)", "long": "Remote Desktop\nSecurity : CredSSP with early user auth (NLA)" },
+    { "hex": "03 00 00 13 0E D0 ?? ?? ?? ?? ??  02 ?? 08 00  02 00 00 00", "level": "good", "short": "NLA", "long": "Remote Desktop\nSecurity : CredSSP (Network Level Authentication)" },
+    { "hex": "03 00 00 13 0E D0 ?? ?? ?? ?? ??  02 ?? 08 00  01 00 00 00", "short": "TLS", "long": "Remote Desktop\nSecurity : TLS (no NLA)" },
+    { "hex": "03 00 00 13 0E D0 ?? ?? ?? ?? ??  02 ?? 08 00  00 00 00 00", "level": "warning", "short": "standard", "long": "Remote Desktop\nSecurity : standard RDP security (weak, no NLA)" },
+    // RDP_NEG_FAILURE (type 03): the server is RDP but refused the offered protocols
+    { "hex": "03 00 00 ?? ?? D0 ?? ?? ?? ?? ??  03", "short": "RDP (refused)", "long": "Remote Desktop\nThe server rejected the security protocols offered" },
+    { "hex": "03 00 00 ?? ?? D0", "short": "RDP", "long": "Remote Desktop (X.224 Connection Confirm received)" }
+  ],
+  "fallback": { "short": "open (not RDP?)", "long": "Port open, but the reply is not an RDP Connection Confirm" }
+}

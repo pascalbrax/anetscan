@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "smb",
+  "title": "SMB",
+  "description": "SMB file sharing: negotiate request, tells SMB1 from SMB2/3 (port 445)",
+  "ports": [445],
+  "steps": [
+    // NetBIOS session header + SMB1 NEGOTIATE offering "NT LM 0.12", "SMB 2.002" and "SMB 2.???"
+    { "send": { "hex": "00 00 00 45  ff 53 4d 42 72 00 00 00 00 18 53 c8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff fe 00 00 00 00  00 22 00  02 4e 54 20 4c 4d 20 30 2e 31 32 00  02 53 4d 42 20 32 2e 30 30 32 00  02 53 4d 42 20 32 2e 3f 3f 3f 00" } },
+    { "read": { "timeoutMs": 2000, "maxBytes": 256 } }
+  ],
+  "match": [
+    { "hex": "?? ?? ?? ?? fe 53 4d 42", "short": "SMB2/3", "long": "SMB 2.x or 3.x (the server answered with an SMB2 negotiate response)" },
+    { "hex": "?? ?? ?? ?? ff 53 4d 42", "level": "bad", "short": "SMB1", "long": "SMB1 (legacy, insecure: the server answered with an SMB1 negotiate response)" }
+  ],
+  "fallback": { "short": "open", "long": "Port open, but no SMB negotiate response" }
+}

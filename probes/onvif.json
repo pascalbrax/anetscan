@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "id": "onvif",
+  "title": "ONVIF",
+  "description": "ONVIF IP cameras and video encoders: WS-Discovery probe sent straight to the host (UDP 3702)",
+  "transport": "udp",
+  "ports": [3702],
+  "steps": [
+    // SOAP "Probe" for NetworkVideoTransmitter devices. Each run uses a fresh message id.
+    { "send": [
+        { "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<e:Envelope xmlns:e=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:w=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:d=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\" xmlns:dn=\"http://www.onvif.org/ver10/network/wsdl\">\r\n<e:Header>\r\n<w:MessageID>uuid:" },
+        { "var": "uuid" },
+        { "text": "</w:MessageID>\r\n<w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>\r\n<w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action>\r\n</e:Header>\r\n<e:Body>\r\n<d:Probe>\r\n<d:Types>dn:NetworkVideoTransmitter</d:Types>\r\n</d:Probe>\r\n</e:Body>\r\n</e:Envelope>" }
+    ] },
+    { "read": { "timeoutMs": 2500, "maxBytes": 16384 } }
+  ],
+  "extract": [
+    // The ONVIF "scopes" describe the device; their values are URL-encoded (Camera%20Name).
+    { "regex": "(?i)onvif://www\\.onvif\\.org/hardware/(?<model>[^\\s<]+)", "decode": "url" },
+    { "regex": "(?i)onvif://www\\.onvif\\.org/name/(?<devname>[^\\s<]+)", "decode": "url" },
+    { "regex": "(?i)onvif://www\\.onvif\\.org/manufacturer/(?<maker>[^\\s<]+)", "decode": "url" },
+    { "regex": "(?i)onvif://www\\.onvif\\.org/location/(?<location>[^\\s<]+)", "decode": "url" },
+    // First address inside the XAddrs element (not the namespace URLs earlier in the document).
+    { "regex": "(?s)<(?:\\w+:)?XAddrs[^>]*>\\s*(?<service>https?://[^\\s<]+)" },
+    { "regex": "(?s)<(?:\\w+:)?Types[^>]*>(?<types>[^<]*)<" }
+  ],
+  "match": [
+    {
+      "regex": "(?i)onvif|networkvideotransmitter",
+      "short": "{model|devname|maker|\"ONVIF\"}",
+      "long": "Status   : answers ONVIF discovery\nModel    : {model}\nName     : {devname}\nMaker    : {maker}\nLocation : {location}\nService  : {service}\nTypes    : {types}"
+    }
+  ],
+  "fallback": { "short": "open", "long": "A reply arrived on UDP 3702 but it is not an ONVIF response" }
+}

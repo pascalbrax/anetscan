@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "rtsp",
+  "title": "RTSP",
+  "description": "RTSP streaming servers such as IP cameras (ports 554, 8554)",
+  "ports": [554, 8554],
+  "steps": [
+    { "send": [
+        { "text": "OPTIONS rtsp://" }, { "var": "ip" }, { "text": ":" }, { "var": "port" },
+        { "text": "/ RTSP/1.0\r\nCSeq: 1\r\nUser-Agent: A-Network-Scanner\r\n\r\n" }
+    ] },
+    { "read": { "timeoutMs": 2000, "maxBytes": 2048, "until": { "text": "\r\n\r\n" } } }
+  ],
+  "extract": [
+    { "regex": "(?im)^Server:[ \\t]*(?<server>[^\\r\\n]+)" },
+    { "regex": "(?im)^Public:[ \\t]*(?<methods>[^\\r\\n]+)" }
+  ],
+  "match": [
+    {
+      "regex": "^RTSP/\\d\\.\\d (?<code>\\d{3})",
+      "short": "{code} {server}",
+      "long": "Status  : {code}\nServer  : {server}\nMethods : {methods}"
+    }
+  ],
+  "fallback": { "short": "open" }
+}

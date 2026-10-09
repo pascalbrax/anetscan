@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "ftp",
+  "title": "FTP",
+  "description": "FTP servers: reads the greeting banner (port 21). Converted from the Python ftp_server_check plugin.",
+  "ports": [21],
+  "steps": [
+    // Nothing is sent: an FTP server speaks first ("220 ProFTPD 1.3.7 Server ready.").
+    // The wait is generous because some servers look up the client's name before greeting.
+    { "read": { "timeoutMs": 4000, "maxBytes": 1024, "until": { "text": "\n" } } }
+  ],
+  "extract": [
+    // Server software, when the greeting names it.
+    { "regex": "(?i)(?<server>vsFTPd [\\d.]+|ProFTPD [\\d.]+|Pure-FTPd|FileZilla Server[^\\r\\n]{0,40}|Microsoft FTP Service|Serv-U[^\\r\\n]{0,30}|wu-[\\w.]+|bftpd [\\d.]+|Titan FTP[^\\r\\n]{0,30}|Synology FTP|DiskStation FTP)" }
+  ],
+  "match": [
+    {
+      // As in the original plugin: a "220" greeting, or the word FTP anywhere in the banner, counts as FTP.
+      "regex": "(?is)^220|ftp",
+      "short": "{server|\"FTP open\"}",
+      "long": "Status : open\nCheck  : banner read\nServer : {server}\nBanner : {banner}"
+    }
+  ],
+  "fallback": {
+    "short": "open?",
+    "long": "Status : port open, FTP not confirmed\nCheck  : banner read\nBanner : {banner|\"<none received>\"}"
+  }
+}

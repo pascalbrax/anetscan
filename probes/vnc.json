@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "vnc",
+  "title": "VNC",
+  "description": "VNC / RFB protocol version (port 5900)",
+  "ports": [5900],
+  "steps": [
+    { "read": { "timeoutMs": 2000, "maxBytes": 32, "until": { "text": "\n" } } }
+  ],
+  "match": [
+    { "regex": "^RFB (?<ver>\\d{3}\\.\\d{3})", "short": "RFB {ver}", "long": "Protocol : RFB {ver}" }
+  ],
+  "fallback": { "short": "open (not VNC?)" }
+}

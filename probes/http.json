@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "id": "http",
+  "title": "HTTP",
+  "description": "HTTP and HTTPS status and server (ports 80, 8080, 443, 8443)",
+  "ports": [80, 8080, { "port": 443, "tls": true }, { "port": 8443, "tls": true }],
+  "steps": [
+    { "send": [
+        { "text": "HEAD / HTTP/1.0\r\nHost: " },
+        { "var": "ip" },
+        { "text": "\r\nUser-Agent: A-Network-Scanner\r\nAccept: */*\r\nConnection: close\r\n\r\n" }
+    ] },
+    { "read": { "timeoutMs": 2000, "maxBytes": 4096, "until": { "text": "\r\n\r\n" } } }
+  ],
+  "extract": [
+    { "regex": "(?im)^Server:[ \\t]*(?<server>[^\\r\\n]+)" },
+    { "regex": "(?im)^WWW-Authenticate:[ \\t]*(?<auth>[^\\r\\n]+)" },
+    { "regex": "(?im)^Location:[ \\t]*(?<location>[^\\r\\n]+)" }
+  ],
+  "match": [
+    {
+      "regex": "^HTTP/\\d(?:\\.\\d)? (?<code>\\d{3})(?: (?<reason>[^\\r\\n]*))?",
+      "short": "{code} {server}",
+      "long": "Status   : {code} {reason}\nServer   : {server}\nLocation : {location}\nAuth     : {auth}\nTLS      : {tls_version}\nCert     : {cert_cn} (expires {cert_expires})"
+    }
+  ],
+  "fallback": { "short": "open", "long": "Port open, but no HTTP response" }
+}

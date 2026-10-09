@@ -1,0 +1,112 @@
+<ContentDialog
+    x:Class="ANetworkScanner.App.Views.OptionsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Options"
+    PrimaryButtonText="Save"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary">
+
+    <ScrollViewer MaxHeight="560" Width="520" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="14" Padding="0,0,16,0">
+
+            <TextBlock Text="Scan speed" FontWeight="SemiBold" />
+            <Grid ColumnSpacing="12" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ComboBox x:Name="PresetBox" Header="Preset" HorizontalAlignment="Stretch"
+                          SelectionChanged="PresetBox_SelectionChanged">
+                    <ComboBoxItem Content="Gentle - 100 probes/s" />
+                    <ComboBoxItem Content="Normal - 500 probes/s" />
+                    <ComboBoxItem Content="Aggressive - 2000 probes/s" />
+                    <ComboBoxItem Content="Custom" />
+                </ComboBox>
+                <NumberBox x:Name="RateBox" Grid.Column="1" Header="Probes per second (0 = unlimited)"
+                           Minimum="0" Maximum="100000" SpinButtonPlacementMode="Compact" SmallChange="50" LargeChange="500"
+                           ValueChanged="Rate_ValueChanged" />
+                <NumberBox x:Name="InFlightBox" Grid.Row="1" Header="Pings in flight"
+                           Minimum="1" Maximum="4096" SpinButtonPlacementMode="Compact" SmallChange="16" LargeChange="64" />
+                <NumberBox x:Name="ProbesBox" Grid.Row="1" Grid.Column="1" Header="Service probes in flight"
+                           Minimum="1" Maximum="2048" SpinButtonPlacementMode="Compact" SmallChange="8" LargeChange="64" />
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="The rate limits every packet the scan sends, pings and service probes together. Lower it on small routers or monitored networks." />
+            </Grid>
+
+            <TextBlock Text="Silent hosts" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <ToggleSwitch x:Name="ForceBox" Header="Force-check hosts that ignore ping and ARP" OnContent="On" OffContent="Off" />
+            <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Tries common TCP ports (22, 80, 135, 139, 443, 445, 3389, 21, 23, 25, 5900, 8080) on every address that stayed silent. A host that opens a port, or refuses one, is listed as TCP only. Finds firewalled hosts, but sends more packets and makes the scan slower; a firewall that answers for every address can list addresses that are not real hosts." />
+
+            <TextBlock Text="Timeouts and retries" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <Grid ColumnSpacing="12" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <NumberBox x:Name="TimeoutBox" Header="Ping timeout (ms)" Minimum="100" Maximum="30000"
+                           SpinButtonPlacementMode="Compact" SmallChange="100" LargeChange="500" />
+                <NumberBox x:Name="RetriesBox" Grid.Column="1" Header="Ping retries" Minimum="0" Maximum="5"
+                           SpinButtonPlacementMode="Compact" />
+                <NumberBox x:Name="ArpBox" Grid.Row="1" Header="ARP timeout (ms)" Minimum="100" Maximum="10000"
+                           SpinButtonPlacementMode="Compact" SmallChange="100" LargeChange="500" />
+                <NumberBox x:Name="ConnectRetriesBox" Grid.Row="1" Grid.Column="1" Header="Port connect retries" Minimum="0" Maximum="3"
+                           SpinButtonPlacementMode="Compact" />
+            </Grid>
+
+            <TextBlock Text="Detail" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <NumberBox x:Name="PreciseBox" Header="Precise round-trip time up to this many targets"
+                       Minimum="0" Maximum="16777216" SpinButtonPlacementMode="Compact" SmallChange="256" LargeChange="1024" />
+            <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Larger scans report whole milliseconds, as Windows measures them, because timing thousands of pings at once is not reliable." />
+
+            <TextBlock Text="Hostnames" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <ToggleSwitch x:Name="ResolveBox" Header="Resolve hostnames" OnContent="On" OffContent="Off" Toggled="ResolveBox_Toggled" />
+            <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="Looks up each live host by reverse DNS (asks your DNS server), mDNS (Apple, Linux, printers) and NetBIOS (Windows). The names appear in the Hostname column and help recognise the device type." />
+
+            <TextBlock Text="Columns" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <StackPanel Orientation="Horizontal" Spacing="18">
+                <CheckBox x:Name="ShowName" Content="Hostname" MinWidth="0" />
+                <CheckBox x:Name="ShowRtt" Content="RTT" MinWidth="0" />
+                <CheckBox x:Name="ShowMac" Content="MAC address" MinWidth="0" />
+                <CheckBox x:Name="ShowVendor" Content="Vendor" MinWidth="0" />
+                <CheckBox x:Name="ShowMethod" Content="Found by" MinWidth="0" />
+            </StackPanel>
+
+            <TextBlock Text="MAC vendors" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <TextBlock x:Name="VendorStatus" FontSize="12" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button x:Name="VendorUpdateButton" Content="Update vendor list now" Click="VendorUpdate_Click" />
+                <ProgressRing x:Name="VendorProgress" Width="20" Height="20" IsActive="False" />
+                <TextBlock x:Name="VendorResult" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="260" />
+            </StackPanel>
+            <ToggleSwitch x:Name="RemindBox" Header="Remind me when the vendor list is older than two months"
+                          OnContent="Remind me" OffContent="Never ask" />
+
+            <TextBlock Text="Appearance" FontWeight="SemiBold" Margin="0,6,0,0" />
+            <ComboBox x:Name="ThemeBox" Header="Theme" MinWidth="220">
+                <ComboBoxItem Content="Same as Windows" />
+                <ComboBoxItem Content="Light" />
+                <ComboBoxItem Content="Dark" />
+            </ComboBox>
+            <ToggleSwitch x:Name="CompactBox" Header="Compact result rows" OnContent="Compact" OffContent="Comfortable" />
+
+            <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,6,0,0"
+                       Text="Which service probes run, and your own probe files, are managed in the Service probes window (the puzzle button in the toolbar)." />
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "ssh",
+  "title": "SSH",
+  "description": "SSH server banner (port 22)",
+  "ports": [22],
+  "steps": [
+    { "read": { "timeoutMs": 1500, "maxBytes": 256, "until": { "text": "\n" } } }
+  ],
+  "match": [
+    {
+      "regex": "^SSH-(?<proto>[\\d.]+)-(?<software>[^\\r\\n]+)",
+      "short": "{software}",
+      "long": "Protocol : SSH {proto}\nSoftware : {software}"
+    }
+  ],
+  "fallback": { "short": "open" }
+}

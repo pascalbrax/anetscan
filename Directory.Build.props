@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Company>Pascal Brax</Company>
+    <Product>A Network Scanner</Product>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>

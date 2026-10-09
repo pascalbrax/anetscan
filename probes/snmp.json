@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "snmp",
+  "title": "SNMP",
+  "description": "SNMP v1 'public' community: reads sysDescr (UDP 161)",
+  "transport": "udp",
+  "ports": [161],
+  "steps": [
+    // SNMPv1 GetRequest, community "public", OID 1.3.6.1.2.1.1.1.0 (sysDescr.0)
+    { "send": { "hex": "30 29 02 01 00 04 06 70 75 62 6c 69 63 a0 1c 02 04 00 00 00 01 02 01 00 02 01 00 30 0e 30 0c 06 08 2b 06 01 02 01 01 01 00 05 00" } },
+    { "read": { "timeoutMs": 1500, "maxBytes": 1500 } }
+  ],
+  "match": [
+    {
+      // sysDescr value = OCTET STRING (tag 04) after the OID; its length is 1 byte, or 81 xx / 82 xx xx
+      "regex": "\\x06\\x08\\x2b\\x06\\x01\\x02\\x01\\x01\\x01\\x00\\x04(?:\\x81[\\x80-\\xff]|\\x82[\\x00-\\xff]{2}|[\\x00-\\x7f])(?<descr>[\\x20-\\x7e\\r\\n]{1,200})",
+      "level": "warning", "short": "{descr}",
+      "long": "Community : public\nsysDescr  : {descr}"
+    },
+    { "hex": "30", "level": "warning", "short": "answers", "long": "Replied to an SNMP request (community \"public\" accepted, sysDescr not readable)" }
+  ],
+  "fallback": { "short": "open" }
+}

@@ -54,6 +54,10 @@ Layout:
 | `tests/Engine.Tests` | unit and loopback tests |
 | `probes`, `data` | built-in probes and the OUI vendor list |
 
+## License
+
+[BSD 3-Clause](LICENSE). The bundled MAC vendor list is the public IEEE OUI registry.
+
 ## Responsible use
 
 Only scan networks you own or are authorised to test. Scans send many packets; the default rate limit is deliberately gentle.

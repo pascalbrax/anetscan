@@ -21,7 +21,7 @@ public enum SortColumn
     Mac,
     Vendor,
     Method,
-    Probe,
+    Services,
 }
 
 /// <summary>
@@ -81,7 +81,6 @@ public sealed partial class MainViewModel : ObservableObject
         [.. AllProbes.Where(p => !Settings.DisabledProbes.Contains(p.Id, StringComparer.OrdinalIgnoreCase))];
 
     public SortColumn SortBy { get; private set; } = SortColumn.Address;
-    public string? SortProbeId { get; private set; }
     public bool SortDescending { get; private set; }
 
     [ObservableProperty] public partial string Target { get; set; } = "";
@@ -364,13 +363,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ── Sorting ──────────────────────────────────────────────────────────────
 
-    public void SortOn(SortColumn column, string? probeId = null)
+    public void SortOn(SortColumn column)
     {
-        if (SortBy == column && SortProbeId == probeId) SortDescending = !SortDescending;
+        if (SortBy == column) SortDescending = !SortDescending;
         else
         {
             SortBy = column;
-            SortProbeId = probeId;
             SortDescending = false;
         }
 
@@ -405,12 +403,10 @@ public sealed partial class MainViewModel : ObservableObject
             SortColumn.Vendor => string.Compare(a.VendorText.Length == 0 ? "￿" : a.VendorText,
                                                 b.VendorText.Length == 0 ? "￿" : b.VendorText, StringComparison.OrdinalIgnoreCase),
             SortColumn.Method => string.Compare(a.MethodText, b.MethodText, StringComparison.Ordinal),
-            SortColumn.Probe => string.Compare(CellText(a), CellText(b), StringComparison.OrdinalIgnoreCase),
+            SortColumn.Services => string.Compare(a.ServicesSortKey, b.ServicesSortKey, StringComparison.OrdinalIgnoreCase),
             _ => a.Value.CompareTo(b.Value),
         };
         if (result == 0) result = a.Value.CompareTo(b.Value);
         return SortDescending ? -result : result;
-
-        string CellText(HostRow r) => r.CellFor(SortProbeId ?? "") is { IsOpen: true } c ? c.Text : "￿";
     }
 }

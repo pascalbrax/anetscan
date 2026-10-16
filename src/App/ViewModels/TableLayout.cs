@@ -37,7 +37,6 @@ public sealed partial class TableLayout : ObservableObject
     public const double StatusWidth = 36;
     private const double ComfortableRow = 46, CompactRow = 34;
 
-    private readonly Dictionary<string, ColumnInfo> _probeColumns = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, double> _saved = new(StringComparer.OrdinalIgnoreCase);
 
     public TableLayout()
@@ -48,6 +47,7 @@ public sealed partial class TableLayout : ObservableObject
         Mac = Track(new ColumnInfo("mac", "MAC address", 150, 110));
         Vendor = Track(new ColumnInfo("vendor", "Vendor", 170, 90));
         Method = Track(new ColumnInfo("method", "Found by", 104, 70));
+        Services = Track(new ColumnInfo("services", "Services", 440, 120, canHide: false));
         RowHeight = ComfortableRow;
     }
 
@@ -58,6 +58,9 @@ public sealed partial class TableLayout : ObservableObject
     public ColumnInfo Vendor { get; }
     public ColumnInfo Method { get; }
 
+    /// <summary>All probe results of a host, merged into one column of pills.</summary>
+    public ColumnInfo Services { get; }
+
     [ObservableProperty] public partial double RowHeight { get; set; }
 
     /// <summary>Raised when any column width changes (the window resizes its scrollable area).</summary>
@@ -67,23 +70,12 @@ public sealed partial class TableLayout : ObservableObject
     public event Action? VisibilityChanged;
 
     /// <summary>All built-in columns in display order.</summary>
-    public IReadOnlyList<ColumnInfo> FixedColumns => [Address, Name, Rtt, Mac, Vendor, Method];
+    public IReadOnlyList<ColumnInfo> FixedColumns => [Address, Name, Rtt, Mac, Vendor, Method, Services];
 
-    /// <summary>The columns shown to the left of the probe columns, in display order.</summary>
+    /// <summary>The columns that are currently shown, in display order.</summary>
     public IEnumerable<ColumnInfo> VisibleFixedColumns => FixedColumns.Where(c => c.IsVisible);
 
-    /// <summary>The column of a probe, created on first use with its saved width if there is one.</summary>
-    public ColumnInfo ProbeColumn(string probeId, string title)
-    {
-        if (_probeColumns.TryGetValue(probeId, out var existing)) return existing;
-        var column = Track(new ColumnInfo("probe:" + probeId, title, 160, 80, canHide: false));
-        if (_saved.TryGetValue(column.Key, out var width)) column.SetWidth(width);
-        _probeColumns[probeId] = column;
-        return column;
-    }
-
-    public double TotalWidth(IEnumerable<ColumnInfo> probeColumns) =>
-        StatusWidth + VisibleFixedColumns.Sum(c => c.Width) + probeColumns.Sum(c => c.Width) + 28;
+    public double TotalWidth() => StatusWidth + VisibleFixedColumns.Sum(c => c.Width) + 28;
 
     public void ApplyDensity(bool compact) => RowHeight = compact ? CompactRow : ComfortableRow;
 
@@ -91,8 +83,11 @@ public sealed partial class TableLayout : ObservableObject
     public void Load(AppSettings settings)
     {
         _saved.Clear();
+        // "probe:<id>" widths belong to the old one-column-per-probe table.
+        foreach (var key in settings.ColumnWidths.Keys.Where(k => k.StartsWith("probe:", StringComparison.Ordinal)).ToList())
+            settings.ColumnWidths.Remove(key);
         foreach (var (key, width) in settings.ColumnWidths) _saved[key] = width;
-        foreach (var column in FixedColumns.Concat(_probeColumns.Values))
+        foreach (var column in FixedColumns)
             if (_saved.TryGetValue(column.Key, out var width)) column.SetWidth(width);
 
         bool changed = false;
@@ -113,7 +108,7 @@ public sealed partial class TableLayout : ObservableObject
     /// <summary>Stores the widths that differ from the defaults; columns left alone stay at their default.</summary>
     public void Save(AppSettings settings)
     {
-        foreach (var column in FixedColumns.Concat(_probeColumns.Values))
+        foreach (var column in FixedColumns)
         {
             if (Math.Abs(column.Width - column.DefaultWidth) < 0.5) settings.ColumnWidths.Remove(column.Key);
             else settings.ColumnWidths[column.Key] = column.Width;

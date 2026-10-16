@@ -143,7 +143,7 @@ public sealed partial class HostRow : ObservableObject
         };
         DiscoveryDetail = host.Detail;
         DotBrush = IsWeakEvidence ? Palette.Caution : Palette.Success;
-        foreach (var p in probes) Cells.Add(new ProbeCell(p.Id, p.Title, layout.ProbeColumn(p.Id, p.Title)));
+        foreach (var p in probes) Cells.Add(new ProbeCell(p.Id, p.Title, layout.Services));
 
         DeviceGlyph = "";
         UpdateDevice();
@@ -204,6 +204,18 @@ public sealed partial class HostRow : ObservableObject
 
     public ObservableCollection<ProbeCell> Cells { get; } = [];
 
+    /// <summary>The probes that found something: these are the pills of the Services column.</summary>
+    public ObservableCollection<ProbeCell> ServiceCells { get; } = [];
+
+    /// <summary>Shown instead of pills: "…" while probes run, "—" when none found anything.</summary>
+    [ObservableProperty] public partial string ServicesPlaceholder { get; set; } = "…";
+
+    /// <summary>One line per service, for the tooltip of the whole column (long lists do not fit the cell).</summary>
+    [ObservableProperty] public partial string ServicesTip { get; set; } = "";
+
+    /// <summary>Sort key of the Services column: the services as text, rows without any last.</summary>
+    public string ServicesSortKey => ServiceCells.Count == 0 ? "\uFFFF" : string.Join(" ", ServiceCells.Select(c => c.Title + " " + c.Text));
+
     /// <summary>Also the accessible name of the list item.</summary>
     public override string ToString() => $"{Address}, {MethodText}";
 
@@ -238,6 +250,19 @@ public sealed partial class HostRow : ObservableObject
         UpdateDevice();
     }
 
+    private void SyncServices()
+    {
+        var open = Cells.Where(c => c.IsOpen && c.Text.Length > 0).ToList();
+        if (!open.SequenceEqual(ServiceCells))
+        {
+            ServiceCells.Clear();
+            foreach (var cell in open) ServiceCells.Add(cell);
+        }
+
+        ServicesPlaceholder = open.Count > 0 ? "" : Cells.Any(c => !c.IsDone) ? "…" : Cells.Count == 0 ? "" : "—";
+        ServicesTip = open.Count > 0 ? string.Join("\n", open.Select(c => $"{c.Title}: {c.Text}")) : "";
+    }
+
     /// <summary>The theme changed: repaint everything that was coloured from code.</summary>
     public void RefreshBrushes()
     {
@@ -250,6 +275,7 @@ public sealed partial class HostRow : ObservableObject
     /// <summary>Re-guesses the device type from everything known so far. Call after each probe result.</summary>
     public void UpdateDevice()
     {
+        SyncServices();
         var services = Cells.Where(c => c.IsOpen)
             .Select(c => new ServiceEvidence(c.ProbeId, c.OpenPorts, c.Text, c.Detail))
             .ToList();

@@ -57,11 +57,11 @@ public sealed partial class MainWindow : Window
         };
         Map.HoverTextChanged += text => MapHover.Text = text;
 
-        BuildHeader(ViewModel.EnabledProbes);
+        BuildHeader();
         SetUpDetailsSplitter();
         UpdateProblemsBar();
         ViewModel.Layout.WidthsChanged += UpdateScrollWidth;
-        ViewModel.Layout.VisibilityChanged += () => BuildHeader(_headerProbes);
+        ViewModel.Layout.VisibilityChanged += BuildHeader;
         ThemeService.Changed += OnThemeChanged;
         Closed += (_, _) => ThemeService.Changed -= OnThemeChanged;
         ViewModel.VendorsLoaded += OnVendorsLoaded;
@@ -133,7 +133,6 @@ public sealed partial class MainWindow : Window
 
     private void OnScanStarted(TargetSet targets, IReadOnlyList<ProbeDefinition> probes)
     {
-        BuildHeader(probes);
         Map.Begin(targets);
         MapEmpty.Visibility = Visibility.Collapsed;
         DetailsTitle.Text = "Details";
@@ -153,7 +152,6 @@ public sealed partial class MainWindow : Window
     private void RefreshProbeColumns()
     {
         _probeRefreshPending = false;
-        BuildHeader(ViewModel.EnabledProbes);
         UpdateProblemsBar();
     }
 
@@ -179,20 +177,18 @@ public sealed partial class MainWindow : Window
 
     // ── Columns, resizing and sorting ────────────────────────────────────────
 
-    private sealed record HeaderCell(Button Button, string Title, SortColumn Sort, string? ProbeId, ColumnInfo Column);
+    private sealed record HeaderCell(Button Button, string Title, SortColumn Sort, ColumnInfo Column);
 
     private readonly List<HeaderCell> _headerCells = [];
     private readonly List<(ColumnInfo Column, PropertyChangedEventHandler Handler)> _headerSubscriptions = [];
-    private IReadOnlyList<ProbeDefinition> _headerProbes = [];
 
     /// <summary>Builds the header: one sortable, resizable cell per column. Rows share the same column objects.</summary>
-    private void BuildHeader(IReadOnlyList<ProbeDefinition> probes)
+    private void BuildHeader()
     {
         foreach (var (column, handler) in _headerSubscriptions) column.PropertyChanged -= handler;
         _headerSubscriptions.Clear();
         _headerCells.Clear();
         HeaderPanel.Children.Clear();
-        _headerProbes = probes;
 
         HeaderPanel.Children.Add(new Border { Width = TableLayout.StatusWidth });
         foreach (var column in ViewModel.Layout.VisibleFixedColumns)
@@ -204,18 +200,17 @@ public sealed partial class MainWindow : Window
                 "mac" => SortColumn.Mac,
                 "vendor" => SortColumn.Vendor,
                 "method" => SortColumn.Method,
+                "services" => SortColumn.Services,
                 _ => SortColumn.Address,
             };
-            AddHeaderCell(column, sort, null);
+            AddHeaderCell(column, sort);
         }
-        foreach (var probe in probes)
-            AddHeaderCell(ViewModel.Layout.ProbeColumn(probe.Id, probe.Title), SortColumn.Probe, probe.Id);
 
         UpdateScrollWidth();
         UpdateHeaderArrows();
     }
 
-    private void AddHeaderCell(ColumnInfo column, SortColumn sort, string? probeId)
+    private void AddHeaderCell(ColumnInfo column, SortColumn sort)
     {
         var cell = new Grid { Width = column.Width };
         var button = new Button
@@ -226,7 +221,7 @@ public sealed partial class MainWindow : Window
         };
         button.Click += (_, _) =>
         {
-            ViewModel.SortOn(sort, probeId);
+            ViewModel.SortOn(sort);
             UpdateHeaderArrows();
         };
 
@@ -237,14 +232,14 @@ public sealed partial class MainWindow : Window
         grip.DragCompleted += SaveColumnWidths;
         grip.AutoFitRequested += () =>
         {
-            column.SetWidth(FitWidth(column, sort, probeId));
+            column.SetWidth(FitWidth(column, sort));
             SaveColumnWidths();
         };
 
         cell.Children.Add(button);
         cell.Children.Add(grip);
         HeaderPanel.Children.Add(cell);
-        _headerCells.Add(new HeaderCell(button, column.Title, sort, probeId, column));
+        _headerCells.Add(new HeaderCell(button, column.Title, sort, column));
 
         PropertyChangedEventHandler handler = (_, e) =>
         {
@@ -256,7 +251,7 @@ public sealed partial class MainWindow : Window
 
     /// <summary>The scrollable area is as wide as all columns together, so a wide table scrolls instead of clipping.</summary>
     private void UpdateScrollWidth() =>
-        ResultsGrid.MinWidth = ViewModel.Layout.TotalWidth(_headerProbes.Select(p => ViewModel.Layout.ProbeColumn(p.Id, p.Title)));
+        ResultsGrid.MinWidth = ViewModel.Layout.TotalWidth();
 
     /// <summary>A grip between the table and the details panel; dragging left widens the panel.</summary>
     private void SetUpDetailsSplitter()
@@ -296,13 +291,13 @@ public sealed partial class MainWindow : Window
     {
         foreach (var cell in _headerCells)
         {
-            bool sorted = ViewModel.SortBy == cell.Sort && ViewModel.SortProbeId == cell.ProbeId;
+            bool sorted = ViewModel.SortBy == cell.Sort;
             cell.Button.Content = cell.Title + (sorted ? (ViewModel.SortDescending ? "  ▼" : "  ▲") : "");
         }
     }
 
     /// <summary>Width that fits the widest value of a column (header included), measured with the row's fonts.</summary>
-    private double FitWidth(ColumnInfo column, SortColumn sort, string? probeId)
+    private double FitWidth(ColumnInfo column, SortColumn sort)
     {
         double widest = Measure(column.Title, 12, FontWeights.SemiBold, mono: false) + 36;
 
@@ -316,9 +311,8 @@ public sealed partial class MainWindow : Window
                 SortColumn.Mac => Measure(row.Mac, 12, FontWeights.Normal, mono: true) + 16,
                 SortColumn.Vendor => Measure(row.VendorText, 14, FontWeights.Normal, mono: false) + 16,
                 SortColumn.Method => Measure(row.MethodText, 14, FontWeights.Normal, mono: false) + 16,
-                _ => row.CellFor(probeId ?? "") is { IsPill: true } cell
-                    ? Measure(cell.Text, 12, FontWeights.SemiBold, mono: false) + 20 + 16
-                    : 0,
+                _ => row.ServiceCells.Sum(c => Measure(c.Title, 11, FontWeights.Normal, mono: false)
+                                               + Measure(c.Text, 12, FontWeights.SemiBold, mono: false) + 20 + 6 + 6),
             };
             if (width > widest) widest = width;
         }
@@ -440,7 +434,7 @@ public sealed partial class MainWindow : Window
     private void OnThemeChanged()
     {
         ViewModel.RefreshTheme();
-        BuildHeader(_headerProbes);
+        BuildHeader();
     }
 
     // ── Probes window ────────────────────────────────────────────────────────

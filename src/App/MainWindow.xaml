@@ -27,26 +27,17 @@
                 <Setter Property="CornerRadius" Value="4" />
             </Style>
 
-            <DataTemplate x:Key="ProbeCellTemplate" x:DataType="vm:ProbeCell">
-                <Grid Width="{x:Bind Column.Width, Mode=OneWay}" VerticalAlignment="Center">
-                    <Border Visibility="{x:Bind IsPill, Mode=OneWay}"
-                            HorizontalAlignment="Left"
-                            CornerRadius="11"
-                            Padding="10,3,10,4"
-                            MaxWidth="{x:Bind PillMaxWidth, Mode=OneWay}"
-                            Background="{x:Bind Background, Mode=OneWay}"
-                            ToolTipService.ToolTip="{x:Bind Text, Mode=OneWay}">
-                        <TextBlock Text="{x:Bind Text, Mode=OneWay}"
-                                   Foreground="{x:Bind Foreground, Mode=OneWay}"
-                                   FontSize="12" FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis" />
-                    </Border>
-                    <TextBlock Visibility="{x:Bind IsPlain, Mode=OneWay}"
-                               Margin="4,0,0,0"
-                               VerticalAlignment="Center"
-                               Text="{x:Bind Text, Mode=OneWay}"
-                               Foreground="{x:Bind Foreground, Mode=OneWay}" />
-                </Grid>
+            <DataTemplate x:Key="ServicePillTemplate" x:DataType="vm:ProbeCell">
+                <Border CornerRadius="11" Padding="10,3,10,4" MaxWidth="{x:Bind PillMaxWidth, Mode=OneWay}"
+                        Background="{x:Bind Background, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind Title}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{x:Bind Title}" FontSize="11" Opacity="0.7"
+                                   Foreground="{x:Bind Foreground, Mode=OneWay}" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind Text, Mode=OneWay}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{x:Bind Foreground, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
             </DataTemplate>
 
             <DataTemplate x:Key="HostRowTemplate" x:DataType="vm:HostRow">
@@ -99,13 +90,23 @@
                                TextTrimming="CharacterEllipsis"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind MethodText}" />
 
-                    <ItemsControl ItemsSource="{x:Bind Cells}" ItemTemplate="{StaticResource ProbeCellTemplate}" VerticalAlignment="Center">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
+                    <!-- every service the probes found, as pills in one column -->
+                    <Grid Width="{x:Bind Layout.Services.Width, Mode=OneWay}" VerticalAlignment="Center"
+                          ToolTipService.ToolTip="{x:Bind ServicesTip, Mode=OneWay}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled"
+                                      VerticalScrollBarVisibility="Disabled" VerticalScrollMode="Disabled">
+                            <ItemsControl ItemsSource="{x:Bind ServiceCells}" ItemTemplate="{StaticResource ServicePillTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="6" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   Text="{x:Bind ServicesPlaceholder, Mode=OneWay}" />
+                    </Grid>
                 </StackPanel>
             </DataTemplate>
         </Grid.Resources>

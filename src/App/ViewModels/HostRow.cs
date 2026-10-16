@@ -264,6 +264,7 @@ public sealed partial class HostRow : ObservableObject
             DeviceKind.Printer => "",
             DeviceKind.NetworkDevice => "",
             DeviceKind.Camera => "",
+            DeviceKind.IpPhone => "",
             DeviceKind.Mobile => "",
             _ => "",
         };
@@ -280,6 +281,7 @@ public sealed partial class HostRow : ObservableObject
         DeviceKind.Printer => "Printer",
         DeviceKind.NetworkDevice => "Network device",
         DeviceKind.Camera => "Camera",
+        DeviceKind.IpPhone => "IP phone",
         DeviceKind.Mobile => "Phone or laptop",
         _ => "Unknown",
     };

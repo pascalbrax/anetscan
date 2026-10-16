@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "sip",
+  "title": "SIP",
+  "description": "SIP devices (VoIP desk phones such as Unify/Mitel OpenScape Desk Phone, PBXs): sends an OPTIONS request (UDP 5060) and shows the User-Agent.",
+  "transport": "udp",
+  "ports": [5060],
+  "steps": [
+    // OPTIONS is the standard "are you there, what are you?" request; it changes nothing on the device.
+    // The branch and Call-ID are fresh on every run.
+    { "send": [
+        { "text": "OPTIONS sip:" }, { "var": "ip" }, { "text": " SIP/2.0\r\nVia: SIP/2.0/UDP scanner.invalid:5060;rport;branch=z9hG4bK" }, { "var": "uuid" },
+        { "text": "\r\nMax-Forwards: 70\r\nFrom: <sip:scan@scanner.invalid>;tag=anetscan\r\nTo: <sip:" }, { "var": "ip" },
+        { "text": ">\r\nCall-ID: " }, { "var": "uuid" }, { "text": "@scanner.invalid\r\nCSeq: 1 OPTIONS\r\nAccept: application/sdp\r\nContent-Length: 0\r\n\r\n" }
+    ] },
+    { "read": { "timeoutMs": 2500, "maxBytes": 4096 } }
+  ],
+  "extract": [
+    // Phones usually put model and firmware in User-Agent, PBXs and proxies in Server.
+    { "regex": "(?im)^User-Agent:[ \\t]*(?<ua>[^\\r\\n]+)" },
+    { "regex": "(?im)^Server:[ \\t]*(?<server>[^\\r\\n]+)" },
+    { "regex": "(?im)^Allow:[ \\t]*(?<allow>[^\\r\\n]+)" },
+    { "regex": "(?i)^SIP/2\\.0 (?<status>\\d{3}[^\\r\\n]*)" }
+  ],
+  "match": [
+    {
+      "regex": "^SIP/2\\.0",
+      "short": "{ua|server|\"SIP\"}",
+      "long": "Status : answers SIP ({status})\nAgent  : {ua}\nServer : {server}\nAllow  : {allow}"
+    }
+  ],
+  "fallback": { "short": "open", "long": "A reply arrived on UDP 5060 but it is not a SIP response" }
+}

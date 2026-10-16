@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "unify-phone",
+  "title": "IP phone",
+  "description": "Unify / Mitel OpenScape Desk Phone and OpenStage IP phones: reads the model, extension and DNS name from the phone's web banner (HTTPS 443), no login needed.",
+  "ports": [{ "port": 443, "tls": true }],
+  "steps": [
+    // main_banner.cmd is the page header of the phone's web interface and is readable without logging in.
+    { "send": [
+        { "text": "GET /main_banner.cmd?lang=en HTTP/1.0\r\nHost: " },
+        { "var": "ip" },
+        { "text": "\r\nUser-Agent: A-Network-Scanner\r\nAccept: */*\r\nConnection: close\r\n\r\n" }
+    ] },
+    { "read": { "timeoutMs": 3000, "maxBytes": 8192, "until": { "text": "</html>" } } }
+  ],
+  "extract": [
+    // "OpenScape Desk Phone CP400" -> "CP400"; "OpenStage 40" stays as it is.
+    { "regex": "(?s)class='DeviceType'>\\s*(?:OpenScape Desk Phone\\s*)?(?<model>[^<\\r\\n]*?)\\s*</p>" },
+    { "regex": "(?s)Phone number\\s*</td>\\s*<td[^>]*>\\s*(?<ext>[^<\\s][^<\\r\\n]*?)\\s*</td>" },
+    { "regex": "(?s)DNS name\\s*</td>\\s*<td[^>]*>\\s*(?<dns>[^<\\s][^<\\r\\n]*?)\\s*</td>" }
+  ],
+  "match": [
+    {
+      "regex": "(?i)class='DeviceType'",
+      "short": "{model} {ext}",
+      "long": "Status    : Unify phone web interface\nModel     : {model}\nExtension : {ext}\nDNS name  : {dns}"
+    }
+  ],
+  // Any other HTTPS server: nothing to report (the HTTP probe already covers it).
+  "fallback": { "short": "", "long": "" }
+}

@@ -9,6 +9,7 @@ public enum DeviceKind
     NetworkDevice,
     Camera,
     Mobile,
+    IpPhone,
 }
 
 /// <param name="Reason">One line saying what the guess is based on, shown as a tooltip.</param>
@@ -44,6 +45,14 @@ public static class DeviceClassifier
     ];
 
     private static readonly string[] CameraWords = ["hikvision", "dahua", "onvif", "ip camera", "axis communications", "reolink", "foscam"];
+
+    // "openscape" alone is not here: it also names the PBX servers.
+    private static readonly string[] PhoneWords =
+    [
+        "desk phone", "openstage", "voip phone", "yealink", "snom", "polycom", "grandstream", "fanvil", "mitel 6",
+    ];
+
+    private static readonly string[] PhoneVendors = ["unify", "mitel", "yealink", "snom", "polycom", "grandstream", "fanvil"];
 
     private static readonly string[] NetworkWords =
     [
@@ -83,6 +92,11 @@ public static class DeviceClassifier
         if (FindWord(text, CameraWords) is { } camera)
             return new(DeviceKind.Camera, $"Its own replies mention \"{camera}\"");
 
+        if (services.Any(s => s.ProbeId == "unify-phone" && s.OpenPorts.Count > 0 && s.Short.Length > 0))
+            return new(DeviceKind.IpPhone, "Its web interface identifies it as a Unify / Mitel phone");
+        if (FindWord(text, PhoneWords) is { } phone)
+            return new(DeviceKind.IpPhone, $"Its own replies mention \"{phone}\"");
+
         if (FindWord(text, NetworkWords) is { } network)
             return new(DeviceKind.NetworkDevice, network == "dropbear"
                 ? "It runs the Dropbear SSH server used by routers and access points"
@@ -95,6 +109,7 @@ public static class DeviceClassifier
         {
             if (FindWord(vendor, PrinterVendors) is { } p) return new(DeviceKind.Printer, $"The MAC address belongs to {evidence.Vendor}, a printer maker");
             if (FindWord(vendor, CameraVendors) is { } c) return new(DeviceKind.Camera, $"The MAC address belongs to {evidence.Vendor}, a camera maker");
+            if (FindWord(vendor, PhoneVendors) is { } ph) return new(DeviceKind.IpPhone, $"The MAC address belongs to {evidence.Vendor}, an IP phone maker");
             if (FindWord(vendor, NetworkVendors) is { } n) return new(DeviceKind.NetworkDevice, $"The MAC address belongs to {evidence.Vendor}, a network equipment maker");
             if (FindWord(vendor, StorageVendors) is { } st) return new(DeviceKind.Server, $"The MAC address belongs to {evidence.Vendor}, a storage (NAS) maker");
         }
@@ -137,6 +152,7 @@ public static class DeviceClassifier
     [
         (DeviceKind.Printer, ["printer", "print", "mfp", "laserjet", "officejet"], ["npi", "brn", "brw", "epson", "canon", "kyocera", "ricoh", "lexmark", "xerox"]),
         (DeviceKind.Camera, ["cam", "ipcam", "camera", "nvr", "dvr"], ["cam-", "ipcam"]),
+        (DeviceKind.IpPhone, ["phone", "voip", "sip"], ["phone-", "voip", "sip-", "cp400", "cp200", "openstage"]),
         (DeviceKind.Mobile, ["iphone", "ipad", "android", "galaxy", "pixel", "oneplus", "redmi"], ["iphone", "ipad", "galaxy", "android"]),
         (DeviceKind.NetworkDevice, ["ap", "switch", "sw", "router", "rtr", "gateway", "gw", "fw", "firewall", "unifi"], ["ap-", "sw-", "rtr-", "fw-"]),
         (DeviceKind.Server, ["srv", "svr", "server", "dc", "nas", "esxi", "proxmox", "pve", "docker", "sql"], ["srv", "svr", "esxi", "nas-"]),

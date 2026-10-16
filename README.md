@@ -10,8 +10,8 @@ A fast, native Windows network scanner. WinUI 3 and C# on .NET 10, unpackaged, *
 
 - **Discovery:** ICMP echo for every target. ARP is used only for addresses on your own subnets (it can find hosts that block ping); routed networks are never trusted to the ARP cache.
 - **Silent hosts (optional):** a "force scan" tries common TCP ports on hosts that answer neither ping nor ARP. An open or refused port proves the host exists; it is listed as *TCP only*.
-- **Service probes:** JSON-only plugins check ports and read banners (SSH, HTTP, RDP, SMB, SNMP, FTP, VNC, RTSP, mail, ONVIF). Results appear as coloured pills in the table and in full in the details panel.
-- **Device guess:** computer, server, printer, camera, network device or mobile, from banners, hostname, vendor, services and TTL.
+- **Service probes:** JSON-only plugins check ports and read banners (SSH, HTTP, RDP, SMB, SNMP, FTP, VNC, RTSP, mail, ONVIF, SIP). Results appear as coloured pills in the table and in full in the details panel.
+- **Device guess:** computer, server, printer, camera, IP phone, network device or mobile, from banners, hostname, vendor, services and TTL.
 - **MAC vendors:** a bundled IEEE OUI list; the app offers to update it when it is older than two months.
 - **Hostnames (optional):** reverse DNS, mDNS and NetBIOS.
 - **Polite by default:** a shared rate limiter covers every packet; speed, retries and timeouts are editable in Options.

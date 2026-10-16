@@ -346,6 +346,10 @@ public sealed class ProbeRunner(RateLimiter? limiter = null, int connectRetries 
             }
         }
 
+        // A probe whose fallback is deliberately empty reports only what it recognises: anything else counts as "nothing here".
+        if (matched is null && probe.FallbackShort.Length == 0 && probe.FallbackLong is { Length: 0 })
+            return new PortResult(spec.Port, PortState.Closed, "", "not recognised");
+
         string shortText = Template.Render(matched?.Short ?? probe.FallbackShort, vars);
 
         string? longTemplate = matched is not null ? matched.Long ?? probe.FallbackLong : probe.FallbackLong;

@@ -27,6 +27,30 @@ public class DeviceClassifierTests
         Svc("snmp", "Apple AirPort - Apple Inc., 2006-2012.  All rights Reserved.", 161)));
 
     [Fact]
+    public void UnifyDeskPhone_BySipUserAgent() => Assert.Equal(DeviceKind.IpPhone, Kind(64, "00:1A:E8:11:22:33",
+        Svc("sip", "OpenScape Desk Phone CP400 SIP V1 R2.1.0", 5060)));
+
+    [Fact]
+    public void UnifyPhone_ByItsWebBanner() => Assert.Equal(DeviceKind.IpPhone, Kind(63, null,
+        Svc("unify-phone", "CP400 100", 443)));
+
+    [Fact]
+    public void AProbeTitledIpPhone_ThatFoundNothing_DoesNotMakeAPhone() => Assert.NotEqual(DeviceKind.IpPhone, Kind(64, null,
+        new ServiceEvidence("unify-phone", [443], "", "[IP phone :443 TLS] ")));
+
+    [Fact]
+    public void AnOpenScapePbx_IsNotAPhone() => Assert.NotEqual(DeviceKind.IpPhone, Kind(64, null,
+        Svc("sip", "OpenScape Voice V10", 5060)));
+
+    [Fact]
+    public void PhoneMaker_ByMacVendor() => Assert.Equal(DeviceKind.IpPhone,
+        DeviceClassifier.Classify(new DeviceEvidence(64, "00:1A:E8:11:22:33", [], true, "Unify Software and Solutions GmbH & Co. KG")).Kind);
+
+    [Fact]
+    public void PhoneHostname() => Assert.Equal(DeviceKind.IpPhone,
+        DeviceClassifier.Classify(new DeviceEvidence(64, null, [], true, null, "phone-reception.example.lan")).Kind);
+
+    [Fact]
     public void Dropbear_IsAnEmbeddedNetworkDevice()
     {
         var guess = DeviceClassifier.Classify(new DeviceEvidence(64, "F4:E2:C6:26:B5:7A", [Svc("ssh", "dropbear_2024.86", 22)]));

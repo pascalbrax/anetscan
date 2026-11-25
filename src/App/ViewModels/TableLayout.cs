@@ -77,11 +77,27 @@ public sealed partial class TableLayout : ObservableObject
 
     public double TotalWidth() => StatusWidth + VisibleFixedColumns.Sum(c => c.Width) + 28;
 
+    private bool _macVendorAutoHidden;
+    private AppSettings? _settings;
+
+    /// <summary>
+    /// Hides the MAC and Vendor columns after a scan that found no MAC at all (targets outside the local subnets are
+    /// never answered by ARP), and shows them again, as the settings say, when told so before the next scan.
+    /// Not saved: the columns the user chose to hide stay hidden either way.
+    /// </summary>
+    public void SetMacVendorAutoHidden(bool hidden)
+    {
+        if (_macVendorAutoHidden == hidden || _settings is null) return;
+        _macVendorAutoHidden = hidden;
+        Load(_settings);
+    }
+
     public void ApplyDensity(bool compact) => RowHeight = compact ? CompactRow : ComfortableRow;
 
     /// <summary>Applies saved widths, hidden columns and density.</summary>
     public void Load(AppSettings settings)
     {
+        _settings = settings;
         _saved.Clear();
         // "probe:<id>" widths belong to the old one-column-per-probe table.
         foreach (var key in settings.ColumnWidths.Keys.Where(k => k.StartsWith("probe:", StringComparison.Ordinal)).ToList())
@@ -96,6 +112,7 @@ public sealed partial class TableLayout : ObservableObject
             bool visible = !column.CanHide || !settings.HiddenColumns.Contains(column.Key, StringComparer.OrdinalIgnoreCase);
             // The hostname column is pointless while name resolution is off, so it only shows when both allow it.
             if (column == Name) visible &= settings.Discovery.ResolveNames;
+            if (column == Mac || column == Vendor) visible &= !_macVendorAutoHidden;
             if (column.IsVisible == visible) continue;
             column.IsVisible = visible;
             changed = true;

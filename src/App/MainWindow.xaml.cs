@@ -133,6 +133,8 @@ public sealed partial class MainWindow : Window
 
     private void OnScanStarted(TargetSet targets, IReadOnlyList<ProbeDefinition> probes)
     {
+        ViewModel.Layout.SetMacVendorAutoHidden(false);
+        UpdateFilterButton();
         Map.Begin(targets);
         MapEmpty.Visibility = Visibility.Collapsed;
         DetailsTitle.Text = "Details";
@@ -145,7 +147,12 @@ public sealed partial class MainWindow : Window
     {
         _pulse?.Stop();
         ScanDot.Opacity = 0.25;
+        UpdateFilterButton();
         if (_probeRefreshPending) RefreshProbeColumns();
+
+        // ARP only answers on the local subnets: a scan of other networks leaves both columns empty, so drop them.
+        if (ViewModel.Rows.Count > 0 && ViewModel.Rows.All(r => r.Mac.Length == 0))
+            ViewModel.Layout.SetMacVendorAutoHidden(true);
     }
 
     /// <summary>The probe set changed in the Probes window: rebuild the columns (never in the middle of a scan).</summary>
@@ -236,7 +243,16 @@ public sealed partial class MainWindow : Window
             SaveColumnWidths();
         };
 
-        cell.Children.Add(button);
+        if (column == ViewModel.Layout.Services)
+        {
+            // The funnel sits right after the title, where it stays in view however wide the column is.
+            button.HorizontalAlignment = HorizontalAlignment.Left;
+            button.Margin = new Thickness(0, 0, 6, 0);
+            var filter = CreateServicesFilterButton();
+            filter.Margin = new Thickness(0);
+            cell.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { button, filter } });
+        }
+        else cell.Children.Add(button);
         cell.Children.Add(grip);
         HeaderPanel.Children.Add(cell);
         _headerCells.Add(new HeaderCell(button, column.Title, sort, column));
@@ -247,6 +263,74 @@ public sealed partial class MainWindow : Window
         };
         column.PropertyChanged += handler;
         _headerSubscriptions.Add((column, handler));
+    }
+
+    // ── Services filter ──────────────────────────────────────────────────────
+
+    private Button? _filterButton;
+
+    /// <summary>A funnel in the Services header: after a scan, picks which services to highlight.</summary>
+    private Button CreateServicesFilterButton()
+    {
+        _filterButton = new Button
+        {
+            Content = new FontIcon { Glyph = "", FontSize = 13 },
+            Width = 30, Height = 26, Padding = new Thickness(0),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            BorderThickness = new Thickness(0),
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(_filterButton, "Filter services");
+        _filterButton.Click += (_, _) => ShowServicesFilter();
+        UpdateFilterButton();
+        return _filterButton;
+    }
+
+    /// <summary>Enabled once the scan is over and there are services to pick from; tinted while a filter is on.</summary>
+    private void UpdateFilterButton()
+    {
+        if (_filterButton is null) return;
+        bool active = ViewModel.ServiceFilter.Count > 0;
+        _filterButton.IsEnabled = !ViewModel.IsScanning && ViewModel.ServiceCounts().Count > 0;
+        _filterButton.Foreground = active ? Palette.Accent : Palette.Secondary;
+        ToolTipService.SetToolTip(_filterButton, active
+            ? "Highlighting: " + string.Join(", ", ViewModel.ServiceFilter.Order(StringComparer.OrdinalIgnoreCase))
+            : _filterButton.IsEnabled ? "Highlight hosts by service" : "Available when the scan has finished");
+    }
+
+    private void ShowServicesFilter()
+    {
+        var panel = new StackPanel { Spacing = 2, MinWidth = 200 };
+        var boxes = new List<CheckBox>();
+
+        void Apply()
+        {
+            ViewModel.SetServiceFilter(boxes.Where(b => b.IsChecked == true).Select(b => (string)b.Tag));
+            UpdateFilterButton();
+        }
+
+        foreach (var (title, hosts) in ViewModel.ServiceCounts())
+        {
+            var box = new CheckBox
+            {
+                Content = $"{title}  ({hosts})",
+                Tag = title,
+                IsChecked = ViewModel.ServiceFilter.Contains(title),
+                MinWidth = 0,
+            };
+            box.Click += (_, _) => Apply();
+            boxes.Add(box);
+            panel.Children.Add(box);
+        }
+
+        var clear = new HyperlinkButton { Content = "Show all", Padding = new Thickness(4, 2, 4, 2) };
+        clear.Click += (_, _) =>
+        {
+            foreach (var box in boxes) box.IsChecked = false;
+            Apply();
+        };
+        panel.Children.Add(clear);
+
+        new Flyout { Content = panel }.ShowAt(_filterButton);
     }
 
     /// <summary>The scrollable area is as wide as all columns together, so a wide table scrolls instead of clipping.</summary>
@@ -530,6 +614,7 @@ public sealed partial class MainWindow : Window
         ViewModel.SaveSettings();
         ViewModel.Layout.Load(ViewModel.Settings); // density and which columns are shown
         ThemeService.SetChoice(ViewModel.Settings.Theme);
+        ViewModel.RefreshRows(); // the hide/fade choice for filtered hosts
     }
 
     private void UpdateProblemsBar()

@@ -104,6 +104,7 @@
                 <ComboBoxItem Content="Dark" />
             </ComboBox>
             <ToggleSwitch x:Name="CompactBox" Header="Compact result rows" OnContent="Compact" OffContent="Comfortable" />
+            <ToggleSwitch x:Name="HideFilteredBox" Header="Hosts not matching the Services filter" OnContent="Hide them" OffContent="Fade them" />
 
             <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,6,0,0"
                        Text="Which service probes run, and your own probe files, are managed in the Service probes window (the puzzle button in the toolbar)." />

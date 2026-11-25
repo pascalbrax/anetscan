@@ -29,6 +29,7 @@ public sealed partial class OptionsDialog : ContentDialog
         ConnectRetriesBox.Value = d.ConnectRetries;
         PreciseBox.Value = d.PreciseRttMaxTargets;
         CompactBox.IsOn = settings.CompactRows;
+        HideFilteredBox.IsOn = settings.HideFilteredRows;
         ThemeBox.SelectedIndex = (int)settings.Theme;
         ResolveBox.IsOn = d.ResolveNames;
         ForceBox.IsOn = d.ForceScan;
@@ -108,6 +109,7 @@ public sealed partial class OptionsDialog : ContentDialog
             NameTimeoutMs = old.NameTimeoutMs,
         }.Normalized();
         _settings.CompactRows = CompactBox.IsOn;
+        _settings.HideFilteredRows = HideFilteredBox.IsOn;
         _settings.Theme = (AppTheme)Math.Clamp(ThemeBox.SelectedIndex, 0, 2);
         _settings.RemindAboutVendorUpdates = RemindBox.IsOn;
         _settings.HiddenColumns = [.. new[] { ("name", ShowName), ("rtt", ShowRtt), ("mac", ShowMac), ("vendor", ShowVendor), ("method", ShowMethod) }

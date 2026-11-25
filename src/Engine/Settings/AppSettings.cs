@@ -26,6 +26,9 @@ public sealed class AppSettings
     /// <summary>Tighter result rows.</summary>
     public bool CompactRows { get; set; }
 
+    /// <summary>With a Services filter on, remove the hosts that do not match from the table instead of fading them.</summary>
+    public bool HideFilteredRows { get; set; }
+
     /// <summary>Columns the user switched off (keys such as "rtt", "mac", "vendor", "method"). The address column cannot be hidden.</summary>
     public List<string> HiddenColumns { get; set; } = [];
 

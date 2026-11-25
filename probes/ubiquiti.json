@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "ubiquiti",
+  "title": "Ubiquiti",
+  "description": "Ubiquiti devices (airMAX, airFiber, EdgeMAX, UniFi...): asks the discovery service on UDP 10001 for model, firmware and name. No login needed.",
+  "transport": "udp",
+  "ports": [10001],
+  "steps": [
+    // Ubiquiti discovery request: version 1, command 0, no payload.
+    { "send": { "hex": "01 00 00 00" } },
+    { "read": { "timeoutMs": 1500, "maxBytes": 1500 } }
+  ],
+  "extract": [
+    // The answer is a list of (type, 2-byte length, value) records; the text ones are picked out by type.
+    { "regex": "(?s)\\x0c\\x00.(?<model>[\\x20-\\x7e]+)" },
+    { "regex": "(?s)\\x14\\x00.(?<full>[\\x20-\\x7e]+)" },
+    { "regex": "(?s)\\x03\\x00.(?<fw>[\\x20-\\x7e]+)" },
+    { "regex": "(?s)\\x0b\\x00.(?<host>[\\x20-\\x7e]+)" },
+    { "regex": "(?s)\\x0d\\x00.(?<essid>[\\x20-\\x7e]+)" }
+  ],
+  "match": [
+    {
+      // Reply header (version 1, command 0, 2-byte length) followed by the hardware address record.
+      "regex": "(?s)^\\x01\\x00..\\x01\\x00\\x06",
+      "short": "{full|model|\"Ubiquiti\"}",
+      "long": "Status   : answers Ubiquiti discovery\nModel    : {full}\nCode     : {model}\nName     : {host}\nSSID     : {essid}\nFirmware : {fw}"
+    }
+  ],
+  // Anything else on UDP 10001 is not a Ubiquiti device.
+  "fallback": { "short": "", "long": "" }
+}

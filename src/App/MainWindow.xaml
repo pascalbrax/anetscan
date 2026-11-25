@@ -42,6 +42,7 @@
 
             <DataTemplate x:Key="HostRowTemplate" x:DataType="vm:HostRow">
                 <StackPanel Orientation="Horizontal" Padding="8,0,8,0"
+                            Opacity="{x:Bind RowOpacity, Mode=OneWay}"
                             Height="{x:Bind Layout.RowHeight, Mode=OneWay}" Background="Transparent">
 
                     <!-- status dot with a soft halo -->

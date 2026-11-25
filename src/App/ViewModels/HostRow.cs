@@ -210,6 +210,18 @@ public sealed partial class HostRow : ObservableObject
     /// <summary>Shown instead of pills: "…" while probes run, "—" when none found anything.</summary>
     [ObservableProperty] public partial string ServicesPlaceholder { get; set; } = "…";
 
+    /// <summary>1 normally; lower for rows the Services filter does not select (they stay in place, just faded).</summary>
+    [ObservableProperty] public partial double RowOpacity { get; set; } = 1;
+
+    /// <summary>Fades the row unless it has one of the selected services (an empty selection selects everything).</summary>
+    public void ApplyServiceFilter(ISet<string> selected)
+    {
+        MatchesServiceFilter = selected.Count == 0 || ServiceCells.Any(c => selected.Contains(c.Title));
+        RowOpacity = MatchesServiceFilter ? 1 : 0.3;
+    }
+
+    public bool MatchesServiceFilter { get; private set; } = true;
+
     /// <summary>One line per service, for the tooltip of the whole column (long lists do not fit the cell).</summary>
     [ObservableProperty] public partial string ServicesTip { get; set; } = "";
 

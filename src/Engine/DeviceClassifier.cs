@@ -97,6 +97,9 @@ public static class DeviceClassifier
         if (FindWord(text, PhoneWords) is { } phone)
             return new(DeviceKind.IpPhone, $"Its own replies mention \"{phone}\"");
 
+        if (services.Any(s => s.ProbeId == "ubiquiti" && s.OpenPorts.Count > 0 && s.Short.Length > 0))
+            return new(DeviceKind.NetworkDevice, "It answers Ubiquiti discovery (radio, access point or router)");
+
         if (FindWord(text, NetworkWords) is { } network)
             return new(DeviceKind.NetworkDevice, network == "dropbear"
                 ? "It runs the Dropbear SSH server used by routers and access points"

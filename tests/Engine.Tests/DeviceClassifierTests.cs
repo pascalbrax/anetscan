@@ -39,6 +39,10 @@ public class DeviceClassifierTests
         new ServiceEvidence("unify-phone", [443], "", "[IP phone :443 TLS] ")));
 
     [Fact]
+    public void UbiquitiRadio_ByItsDiscoveryAnswer() => Assert.Equal(DeviceKind.NetworkDevice, Kind(63, null,
+        Svc("ubiquiti", "Rocket Prism 5AC", 10001)));
+
+    [Fact]
     public void AnOpenScapePbx_IsNotAPhone() => Assert.NotEqual(DeviceKind.IpPhone, Kind(64, null,
         Svc("sip", "OpenScape Voice V10", 5060)));
 

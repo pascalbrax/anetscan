@@ -22,7 +22,7 @@
   "match": [
     {
       "regex": "(?i)class='DeviceType'",
-      "short": "{model} {ext}",
+      "short": "{model} T.{ext}",
       "long": "Status    : Unify phone web interface\nModel     : {model}\nExtension : {ext}\nDNS name  : {dns}"
     }
   ],

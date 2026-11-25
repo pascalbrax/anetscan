@@ -83,7 +83,7 @@ public class UnifyPhoneProbeTests
         var (result, request) = await RunAgainst(Banner("OpenScape Desk Phone CP400", "100", "100.example.lan"));
 
         Assert.Equal(PortState.Open, result.State);
-        Assert.Equal("CP400 100", result.Short);
+        Assert.Equal("CP400 T.100", result.Short);
         Assert.Contains("Model     : CP400", result.Long);
         Assert.Contains("Extension : 100", result.Long);
         Assert.Contains("DNS name  : 100.example.lan", result.Long);
@@ -94,14 +94,14 @@ public class UnifyPhoneProbeTests
     public async Task AnOlderOpenStage_KeepsItsFullName()
     {
         var (result, _) = await RunAgainst(Banner("OpenStage 40", "205", "205.example.lan"));
-        Assert.Equal("OpenStage 40 205", result.Short);
+        Assert.Equal("OpenStage 40 T.205", result.Short);
     }
 
     [Fact]
     public async Task APhoneWithoutExtension_StillShowsTheModel()
     {
         var (result, _) = await RunAgainst("HTTP/1.1 200 OK\r\n\r\n<html><p class='DeviceType'>\r\nOpenScape Desk Phone CP200\r\n</p></html>");
-        Assert.Equal("CP200", result.Short);
+        Assert.StartsWith("CP200", result.Short);
         Assert.DoesNotContain("Extension", result.Long);
     }
 

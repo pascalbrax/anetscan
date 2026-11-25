@@ -218,6 +218,7 @@ public sealed partial class MainViewModel : ObservableObject
         RefreshSuggestions();
 
         _targets = targets;
+        ServiceFilter.Clear();
         Rows.Clear();
         _all.Clear();
         _byAddress.Clear();
@@ -363,6 +364,40 @@ public sealed partial class MainViewModel : ObservableObject
 
     // ── Sorting ──────────────────────────────────────────────────────────────
 
+    // ── Services filter ──────────────────────────────────────────────────────
+
+    /// <summary>Titles of the probes whose services are highlighted; empty means no filter.</summary>
+    public HashSet<string> ServiceFilter { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Every service title found by the scan, with the number of hosts that have it.</summary>
+    public IReadOnlyList<(string Title, int Hosts)> ServiceCounts() =>
+        [.. _all.SelectMany(r => r.ServiceCells.Select(c => c.Title).Distinct())
+            .GroupBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .Select(g => (g.Key, g.Count()))
+            .OrderBy(x => x.Item1, StringComparer.OrdinalIgnoreCase)];
+
+    public void SetServiceFilter(IEnumerable<string> titles)
+    {
+        ServiceFilter.Clear();
+        foreach (var title in titles) ServiceFilter.Add(title);
+        foreach (var row in _all) row.ApplyServiceFilter(ServiceFilter);
+        RefreshRows();
+    }
+
+    /// <summary>
+    /// Fills the visible list from all hosts in the current order. With a Services filter on and the "hide" option set,
+    /// hosts that do not match are left out.
+    /// </summary>
+    public void RefreshRows()
+    {
+        bool hide = Settings.HideFilteredRows && ServiceFilter.Count > 0;
+        var selected = Selected;
+        Rows.Clear();
+        foreach (var row in _all)
+            if (!hide || row.MatchesServiceFilter) Rows.Add(row);
+        Selected = selected is not null && Rows.Contains(selected) ? selected : null;
+    }
+
     public void SortOn(SortColumn column)
     {
         if (SortBy == column) SortDescending = !SortDescending;
@@ -373,10 +408,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         _all.Sort(Compare);
-        var selected = Selected;
-        Rows.Clear();
-        foreach (var row in _all) Rows.Add(row);
-        Selected = selected;
+        RefreshRows();
         OnPropertyChanged(nameof(SortBy));
     }
 

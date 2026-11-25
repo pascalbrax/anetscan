@@ -153,6 +153,8 @@ public sealed partial class MainWindow : Window
         // ARP only answers on the local subnets: a scan of other networks leaves both columns empty, so drop them.
         if (ViewModel.Rows.Count > 0 && ViewModel.Rows.All(r => r.Mac.Length == 0))
             ViewModel.Layout.SetMacVendorAutoHidden(true);
+
+        FitServicesColumn();
     }
 
     /// <summary>The probe set changed in the Probes window: rebuild the columns (never in the middle of a scan).</summary>
@@ -269,6 +271,10 @@ public sealed partial class MainWindow : Window
 
     private Button? _filterButton;
 
+    /// <summary>Widens the Services column so every pill of every shown row fits (the table then scrolls sideways).</summary>
+    private void FitServicesColumn() =>
+        ViewModel.Layout.Services.SetWidth(FitWidth(ViewModel.Layout.Services, SortColumn.Services));
+
     /// <summary>A funnel in the Services header: after a scan, picks which services to highlight.</summary>
     private Button CreateServicesFilterButton()
     {
@@ -306,6 +312,7 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.SetServiceFilter(boxes.Where(b => b.IsChecked == true).Select(b => (string)b.Tag));
             UpdateFilterButton();
+            FitServicesColumn();
         }
 
         foreach (var (title, hosts) in ViewModel.ServiceCounts())
@@ -395,13 +402,13 @@ public sealed partial class MainWindow : Window
                 SortColumn.Mac => Measure(row.Mac, 12, FontWeights.Normal, mono: true) + 16,
                 SortColumn.Vendor => Measure(row.VendorText, 14, FontWeights.Normal, mono: false) + 16,
                 SortColumn.Method => Measure(row.MethodText, 14, FontWeights.Normal, mono: false) + 16,
-                _ => row.ServiceCells.Sum(c => Measure(c.Title, 11, FontWeights.Normal, mono: false)
+                _ => row.ShownServices.Sum(c => Measure(c.Title, 11, FontWeights.Normal, mono: false)
                                                + Measure(c.Text, 12, FontWeights.SemiBold, mono: false) + 20 + 6 + 6),
             };
             if (width > widest) widest = width;
         }
 
-        return Math.Clamp(Math.Ceiling(widest), column.MinWidth, 700);
+        return Math.Clamp(Math.Ceiling(widest), column.MinWidth, column == ViewModel.Layout.Services ? 2400 : 700);
     }
 
     private static double Measure(string text, double size, Windows.UI.Text.FontWeight weight, bool mono)
@@ -615,6 +622,7 @@ public sealed partial class MainWindow : Window
         ViewModel.Layout.Load(ViewModel.Settings); // density and which columns are shown
         ThemeService.SetChoice(ViewModel.Settings.Theme);
         ViewModel.RefreshRows(); // the hide/fade choice for filtered hosts
+        FitServicesColumn();
     }
 
     private void UpdateProblemsBar()

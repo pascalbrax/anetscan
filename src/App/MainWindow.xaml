@@ -96,7 +96,7 @@
                           ToolTipService.ToolTip="{x:Bind ServicesTip, Mode=OneWay}">
                         <ScrollViewer HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Disabled"
                                       VerticalScrollBarVisibility="Disabled" VerticalScrollMode="Disabled">
-                            <ItemsControl ItemsSource="{x:Bind ServiceCells}" ItemTemplate="{StaticResource ServicePillTemplate}">
+                            <ItemsControl ItemsSource="{x:Bind ShownServices}" ItemTemplate="{StaticResource ServicePillTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal" Spacing="6" />

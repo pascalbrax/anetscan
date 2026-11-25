@@ -216,8 +216,25 @@ public sealed partial class HostRow : ObservableObject
     /// <summary>Fades the row unless it has one of the selected services (an empty selection selects everything).</summary>
     public void ApplyServiceFilter(ISet<string> selected)
     {
+        _filter = selected;
         MatchesServiceFilter = selected.Count == 0 || ServiceCells.Any(c => selected.Contains(c.Title));
         RowOpacity = MatchesServiceFilter ? 1 : 0.3;
+        UpdateShownServices();
+    }
+
+    private ISet<string>? _filter;
+
+    /// <summary>The pills the row shows: all its services, or, in a row that matches an active filter, only the selected ones.</summary>
+    public ObservableCollection<ProbeCell> ShownServices { get; } = [];
+
+    private void UpdateShownServices()
+    {
+        var shown = _filter is { Count: > 0 } && MatchesServiceFilter
+            ? ServiceCells.Where(c => _filter.Contains(c.Title)).ToList()
+            : ServiceCells.ToList();
+        if (shown.SequenceEqual(ShownServices)) return;
+        ShownServices.Clear();
+        foreach (var cell in shown) ShownServices.Add(cell);
     }
 
     public bool MatchesServiceFilter { get; private set; } = true;
@@ -270,6 +287,8 @@ public sealed partial class HostRow : ObservableObject
             ServiceCells.Clear();
             foreach (var cell in open) ServiceCells.Add(cell);
         }
+        if (_filter is not null) MatchesServiceFilter = _filter.Count == 0 || open.Any(c => _filter.Contains(c.Title));
+        UpdateShownServices();
 
         ServicesPlaceholder = open.Count > 0 ? "" : Cells.Any(c => !c.IsDone) ? "…" : Cells.Count == 0 ? "" : "—";
         ServicesTip = open.Count > 0 ? string.Join("\n", open.Select(c => $"{c.Title}: {c.Text}")) : "";

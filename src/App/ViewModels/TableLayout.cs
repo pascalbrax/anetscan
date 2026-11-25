@@ -28,7 +28,7 @@ public sealed partial class ColumnInfo : ObservableObject
     [ObservableProperty] public partial double Width { get; set; }
     [ObservableProperty] public partial bool IsVisible { get; set; }
 
-    public void SetWidth(double width) => Width = Math.Round(Math.Clamp(width, MinWidth, 800));
+    public void SetWidth(double width) => Width = Math.Round(Math.Clamp(width, MinWidth, 2400));
 }
 
 /// <summary>The shared geometry of the results table: which columns show, their widths, and the row height.</summary>
